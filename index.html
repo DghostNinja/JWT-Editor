@@ -3,26 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <title>JWT Editor</title>
-  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
   <style>
+    /* ---------------- General ---------------- */
     body {
       font-family: 'Roboto Mono', monospace;
       background: #f5f7fa;
       color: #333;
       margin: 0;
       padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode {
+      background: #1e1e2f;
+      color: #f5f5f5;
     }
     h1, h2 {
       color: #2c3e50;
+      transition: color 0.3s;
     }
-    textarea, input[type="text"], input[type="file"] {
+    body.dark-mode h1, body.dark-mode h2 {
+      color: #f5f5f5;
+    }
+    textarea,
+    input[type="text"],
+    input[type="file"] {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 14px;
+      box-sizing: border-box;
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
+    }
+    body.dark-mode textarea,
+    body.dark-mode input[type="text"] {
+      background: #2c2c3c;
+      color: #f5f5f5;
+      border-color: #555;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      transition: background 0.3s;
+    }
+    body.dark-mode .section {
+      background: #2c2c3c;
     }
     button {
       background: #2980b9;
@@ -33,162 +64,134 @@
       font-size: 16px;
       cursor: pointer;
       margin-top: 10px;
+      transition: background 0.3s;
     }
     button:hover {
       background: #3498db;
     }
-    .section {
-      background: white;
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    /* ---------------- JWT Input + Copy + Status ---------------- */
+    .jwt-input-wrapper {
+      position: relative;
+      width: 100%;
     }
-    #encodedResult {
-      margin-top: 10px;
-      font-weight: bold;
-      word-break: break-all;
+    #jwtInput {
+      padding-left: 60px; /* space for copy button */
+      padding-top: 25px;  /* extra top padding so text doesn’t overlap lifted status */
     }
     #copyButton {
-      background-color: #27ae60;
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      padding: 6px 12px;
+      font-size: 14px;
+      z-index: 10;
     }
-    #copyButton:hover {
-      background-color: #2ecc71;
+    #verifyStatus {
+      position: absolute;
+      top: -20px; /* above textarea */
+      right: 5px;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 10;
+      background: rgba(255,255,255,0.85);
+      padding: 2px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      color: #2c3e50;
+      transition: color 0.3s, background 0.3s;
+    }
+    body.dark-mode #verifyStatus {
+      color: #f5f5f5;
+      background: rgba(40,40,60,0.85);
+    }
+
+    /* ---------------- Payload JSON Validation ---------------- */
+    .payload-wrapper {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+    }
+    #payloadJsonError {
+      margin-left: 10px;
+      font-weight: bold;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    #payloadJsonError.valid { color: green; }
+    #payloadJsonError.invalid { color: red; }
+
+    /* Dark mode toggle */
+    #darkModeToggle {
+      float: right;
+      background: #555;
+      font-size: 14px;
+      padding: 6px 12px;
+    }
+    #darkModeToggle:hover {
+      background: #777;
     }
   </style>
 </head>
 <body>
-  <h1>JWT Editor</h1>
+  <h1>JWT Editor
+    <button id="darkModeToggle">🌙 Dark Mode</button>
+  </h1>
 
   <div class="section">
     <h2>Decode & Edit JWT</h2>
-    <label for="jwtInput">Paste JWT:</label>
-    <textarea id="jwtInput" rows="4" oninput="autoDecodeJWT()"></textarea>
 
-    <button onclick="loadTestJWT()">Load Demo JWT</button>
+    <label for="jwtInput">Paste JWT:</label>
+    <div class="jwt-input-wrapper">
+      <button id="copyButton"><i class="fas fa-copy"></i></button>
+      <textarea id="jwtInput" rows="4"></textarea>
+      <span id="verifyStatus">⚠</span>
+    </div>
+
+    <button id="loadDemoBtn">Load Demo JWT</button>
 
     <label for="decodedHeader">Header (JSON):</label>
-    <textarea id="decodedHeader" rows="5" oninput="updateJWTFromEdits()"></textarea>
+    <textarea id="decodedHeader" rows="5"></textarea>
 
     <label for="decodedPayload">Payload (JSON):</label>
-    <textarea id="decodedPayload" rows="10" oninput="updateJWTFromEdits()"></textarea>
+    <div class="payload-wrapper">
+      <textarea id="decodedPayload" rows="10"></textarea>
+      <span id="payloadJsonError">⚠</span>
+    </div>
 
     <label for="editSecret">Optional Secret Key (to sign):</label>
-    <input type="text" id="editSecret" oninput="updateJWTFromEdits()">
+    <input type="text" id="editSecret">
 
     <p id="encodedResult"></p>
-    <button id="copyButton" onclick="copyToClipboard()">Copy JWT</button>
   </div>
 
+  <!-- JS Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
+  <script src="jwt-editor.js"></script>
   <script>
-    function base64UrlDecode(input) {
-      input = input.replace(/-/g, '+').replace(/_/g, '/');
-      const pad = input.length % 4;
-      if (pad) input += '='.repeat(4 - pad);
+    // ----------------- Dark Mode Toggle -----------------
+    const darkToggle = document.getElementById('darkModeToggle');
+    darkToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      darkToggle.textContent = document.body.classList.contains('dark-mode') ? '☀ Light Mode' : '🌙 Dark Mode';
+    });
+
+    // ----------------- Payload JSON Live Validation -----------------
+    const payloadBox = document.getElementById("decodedPayload");
+    const payloadError = document.getElementById("payloadJsonError");
+
+    payloadBox.addEventListener("input", () => {
       try {
-        return atob(input);
+        JSON.parse(payloadBox.value);
+        payloadError.textContent = "✔ Valid JSON";
+        payloadError.classList.remove("invalid");
+        payloadError.classList.add("valid");
       } catch {
-        return null;
+        payloadError.textContent = "⚠ Invalid JSON";
+        payloadError.classList.remove("valid");
+        payloadError.classList.add("invalid");
       }
-    }
-
-    function base64UrlEncode(input) {
-      return btoa(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-
-    function getHMACAlgo(alg) {
-      switch (alg) {
-        case 'HS256': return CryptoJS.HmacSHA256;
-        case 'HS384': return CryptoJS.HmacSHA384;
-        case 'HS512': return CryptoJS.HmacSHA512;
-        default: return null;
-      }
-    }
-
-    function autoDecodeJWT() {
-      const jwtInput = document.getElementById('jwtInput').value.trim();
-      const parts = jwtInput.split('.');
-      const resultDisplay = document.getElementById('encodedResult');
-
-      if (parts.length !== 3) {
-        resultDisplay.textContent = 'Invalid JWT format.';
-        resultDisplay.className = 'error';
-        return;
-      }
-
-      const decodedHeader = base64UrlDecode(parts[0]);
-      const decodedPayload = base64UrlDecode(parts[1]);
-
-      if (!decodedHeader || !decodedPayload) {
-        resultDisplay.textContent = 'Invalid base64 encoding.';
-        resultDisplay.className = 'error';
-        return;
-      }
-
-      try {
-        document.getElementById('decodedHeader').value = JSON.stringify(JSON.parse(decodedHeader), null, 2);
-        document.getElementById('decodedPayload').value = JSON.stringify(JSON.parse(decodedPayload), null, 2);
-        resultDisplay.textContent = '';
-      } catch (e) {
-        resultDisplay.textContent = 'Header or payload is not valid JSON.';
-        resultDisplay.className = 'error';
-      }
-    }
-
-    function updateJWTFromEdits() {
-      const headerJSON = document.getElementById('decodedHeader').value.trim();
-      const payloadJSON = document.getElementById('decodedPayload').value.trim();
-      const secret = document.getElementById('editSecret').value.trim();
-      const jwtInput = document.getElementById('jwtInput');
-      const output = document.getElementById('encodedResult');
-
-      try {
-        const header = JSON.parse(headerJSON);
-        const payload = JSON.parse(payloadJSON);
-
-        const encodedHeader = base64UrlEncode(JSON.stringify(header));
-        const encodedPayload = base64UrlEncode(JSON.stringify(payload));
-        const data = `${encodedHeader}.${encodedPayload}`;
-        let fullJWT = data;
-
-        if (secret) {
-          const algoFn = getHMACAlgo(header.alg || 'HS256');
-          if (!algoFn) {
-            output.textContent = 'Unsupported algorithm.';
-            return;
-          }
-          const hmac = algoFn(data, secret);
-          const signature = CryptoJS.enc.Base64.stringify(hmac)
-            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-          fullJWT += `.${signature}`;
-        }
-
-        jwtInput.value = fullJWT;
-        output.textContent = fullJWT;
-      } catch (e) {
-        output.textContent = 'Invalid JSON.';
-      }
-    }
-
-    function loadTestJWT() {
-      const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiYWRtaW4ifQ.qK7qEqLJHX_8JoECnKoMsMo8CtX3oywecGe0NSK5pCg";
-      const secret = "admin";
-      document.getElementById('jwtInput').value = jwt;
-      document.getElementById('editSecret').value = secret;
-      autoDecodeJWT();
-    }
-
-    function copyToClipboard() {
-      const resultText = document.getElementById('encodedResult').textContent;
-      navigator.clipboard.writeText(resultText).then(() => {
-        const btn = document.getElementById('copyButton');
-        const originalText = btn.textContent;
-        btn.textContent = 'Copied!';
-        setTimeout(() => {
-          btn.textContent = originalText;
-        }, 2000);
-      });
-    }
+    });
   </script>
 </body>
 </html>
