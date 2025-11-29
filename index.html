@@ -5,6 +5,7 @@
   <title>JWT Editor</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
   <style>
     /* ---------------- General ---------------- */
     body {
@@ -15,59 +16,83 @@
       padding: 20px;
       transition: background 0.3s, color 0.3s;
     }
+
     body.dark-mode {
       background: #1e1e2f;
       color: #f5f5f5;
     }
+
     h1, h2 {
       color: #2c3e50;
+      margin: 0 0 10px 0;
       transition: color 0.3s;
     }
+
     body.dark-mode h1, body.dark-mode h2 {
       color: #f5f5f5;
     }
+
+    /* ---------------- Inputs & Textareas ---------------- */
     textarea,
-    input[type="text"],
-    input[type="file"] {
+    input[type="text"] {
       width: 100%;
+      max-width: 100%;
       padding: 10px;
-      margin: 10px 0;
+      margin: 6px 0 16px 0;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 8px;
       font-size: 14px;
       box-sizing: border-box;
       transition: background 0.3s, color 0.3s, border-color 0.3s;
     }
+
     body.dark-mode textarea,
     body.dark-mode input[type="text"] {
       background: #2c2c3c;
       color: #f5f5f5;
       border-color: #555;
     }
+
+    /* ---------------- Section ---------------- */
     .section {
       background: white;
-      padding: 20px;
+      padding: 25px;
       margin: 20px 0;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       transition: background 0.3s;
     }
+
     body.dark-mode .section {
       background: #2c2c3c;
     }
+
+    /* ---------------- Buttons ---------------- */
     button {
       background: #2980b9;
       color: white;
-      padding: 10px 15px;
+      padding: 10px 16px;
       border: none;
-      border-radius: 5px;
-      font-size: 16px;
+      border-radius: 8px;
+      font-size: 15px;
       cursor: pointer;
-      margin-top: 10px;
       transition: background 0.3s;
     }
+
     button:hover {
       background: #3498db;
+    }
+
+    #darkModeToggle {
+      float: right;
+      background: #555;
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 6px;
+    }
+
+    #darkModeToggle:hover {
+      background: #777;
     }
 
     /* ---------------- JWT Input + Copy + Status ---------------- */
@@ -75,22 +100,29 @@
       position: relative;
       width: 100%;
     }
+
     #jwtInput {
-      padding-left: 60px; /* space for copy button */
-      padding-top: 25px;  /* extra top padding so text doesn’t overlap lifted status */
+      padding-left: 70px;
+      padding-top: 25px;
+      border-radius: 8px;
+      min-height: 60px;
+      resize: vertical;
     }
+
     #copyButton {
       position: absolute;
-      top: 5px;
-      left: 5px;
+      top: 8px;
+      left: 8px;
       padding: 6px 12px;
       font-size: 14px;
       z-index: 10;
+      border-radius: 6px;
     }
+
     #verifyStatus {
       position: absolute;
-      top: -20px; /* above textarea */
-      right: 5px;
+      top: -22px;
+      right: 0;
       font-size: 14px;
       font-weight: bold;
       z-index: 10;
@@ -101,6 +133,7 @@
       color: #2c3e50;
       transition: color 0.3s, background 0.3s;
     }
+
     body.dark-mode #verifyStatus {
       color: #f5f5f5;
       background: rgba(40,40,60,0.85);
@@ -111,87 +144,156 @@
       position: relative;
       display: flex;
       align-items: flex-start;
+      gap: 10px;
     }
+
     #payloadJsonError {
-      margin-left: 10px;
       font-weight: bold;
+      line-height: 1.4;
       white-space: nowrap;
-      line-height: 1.2;
     }
+
     #payloadJsonError.valid { color: green; }
     #payloadJsonError.invalid { color: red; }
 
-    /* Dark mode toggle */
-    #darkModeToggle {
-      float: right;
-      background: #555;
-      font-size: 14px;
-      padding: 6px 12px;
+    /* ---------------- Layout: Flex Left & Right ---------------- */
+    .flex-row {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
     }
-    #darkModeToggle:hover {
-      background: #777;
+
+    .flex-left {
+      flex: 2;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
     }
+
+    .flex-right {
+      flex: 1;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
   </style>
 </head>
 <body>
-  <h1>JWT Editor
+  <h1>
+    JWT Editor
     <button id="darkModeToggle">🌙 Dark Mode</button>
   </h1>
 
-  <div class="section">
-    <h2>Decode & Edit JWT</h2>
+  <div class="section flex-row">
 
-    <label for="jwtInput">Paste JWT:</label>
-    <div class="jwt-input-wrapper">
-      <button id="copyButton"><i class="fas fa-copy"></i></button>
-      <textarea id="jwtInput" rows="4"></textarea>
-      <span id="verifyStatus">⚠</span>
+    <!-- Left Panel -->
+    <div class="flex-left">
+      <h2>Decode & Edit JWT</h2>
+
+      <label for="jwtInput">Paste JWT:</label>
+      <div class="jwt-input-wrapper">
+        <button id="copyButton"><i class="fas fa-copy"></i></button>
+        <textarea id="jwtInput" rows="4"></textarea>
+        <span id="verifyStatus">⚠</span>
+      </div>
+
+      <button id="loadDemoBtn">Load Demo JWT</button>
+
+      <label for="decodedHeader">Header (JSON):</label>
+      <textarea id="decodedHeader" rows="5"></textarea>
+
+      <label for="decodedPayload">Payload (JSON):</label>
+      <div class="payload-wrapper">
+        <textarea id="decodedPayload" rows="10"></textarea>
+        <span id="payloadJsonError">⚠</span>
+      </div>
     </div>
 
-    <button id="loadDemoBtn">Load Demo JWT</button>
+    <!-- Right Panel -->
+    <div class="flex-right">
+      <label for="editSecret">Optional Secret Key (to sign):</label>
+      <input type="text" id="editSecret">
 
-    <label for="decodedHeader">Header (JSON):</label>
-    <textarea id="decodedHeader" rows="5"></textarea>
-
-    <label for="decodedPayload">Payload (JSON):</label>
-    <div class="payload-wrapper">
-      <textarea id="decodedPayload" rows="10"></textarea>
-      <span id="payloadJsonError">⚠</span>
+      <p id="encodedResult"></p>
     </div>
 
-    <label for="editSecret">Optional Secret Key (to sign):</label>
-    <input type="text" id="editSecret">
-
-    <p id="encodedResult"></p>
   </div>
 
-  <!-- JS Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
   <script src="jwt-editor.js"></script>
   <script>
-    // ----------------- Dark Mode Toggle -----------------
-    const darkToggle = document.getElementById('darkModeToggle');
-    darkToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      darkToggle.textContent = document.body.classList.contains('dark-mode') ? '☀ Light Mode' : '🌙 Dark Mode';
-    });
+  // ---------------- Dark Mode Toggle ----------------
+  const darkToggle = document.getElementById('darkModeToggle');
+  darkToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    darkToggle.textContent = document.body.classList.contains('dark-mode') 
+      ? '☀ Light Mode' 
+      : '🌙 Dark Mode';
+  });
 
-    // ----------------- Payload JSON Live Validation -----------------
-    const payloadBox = document.getElementById("decodedPayload");
-    const payloadError = document.getElementById("payloadJsonError");
+  // ---------------- Payload JSON Validation ----------------
+  const payloadBox = document.getElementById("decodedPayload");
+  const payloadError = document.getElementById("payloadJsonError");
+  
+  payloadBox.addEventListener("input", () => {
+    try {
+      JSON.parse(payloadBox.value);
+      payloadError.textContent = "✔ Valid JSON";
+      payloadError.classList.remove("invalid");
+      payloadError.classList.add("valid");
+    } catch (e) { // safer for older browsers
+      payloadError.textContent = "⚠ Invalid JSON";
+      payloadError.classList.remove("valid");
+      payloadError.classList.add("invalid");
+    }
+  });
 
-    payloadBox.addEventListener("input", () => {
+  // ---------------- Copy JWT to Clipboard ----------------
+  const copyBtn = document.getElementById("copyButton");
+  const jwtInput = document.getElementById("jwtInput");
+
+  copyBtn.addEventListener("click", () => {
+    const text = jwtInput.value.trim();
+    if (!text) return;
+
+    const showCopied = () => {
+      copyBtn.innerHTML = "✔ Copied";
+      setTimeout(() => copyBtn.innerHTML = '<i class="fas fa-copy"></i>', 1500);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text)
+        .then(showCopied)
+        .catch(() => alert("Failed to copy JWT."));
+    } else {
+      jwtInput.select();
       try {
-        JSON.parse(payloadBox.value);
-        payloadError.textContent = "✔ Valid JSON";
-        payloadError.classList.remove("invalid");
-        payloadError.classList.add("valid");
+        const successful = document.execCommand('copy');
+        if (successful) showCopied();
+        else alert("Failed to copy JWT.");
       } catch {
-        payloadError.textContent = "⚠ Invalid JSON";
-        payloadError.classList.remove("valid");
-        payloadError.classList.add("invalid");
+        alert("Failed to copy JWT.");
       }
-    });
-  </script>
+      window.getSelection().removeAllRanges();
+    }
+  });
+
+  // ---------------- Optional: Auto-load Demo JWT ----------------
+  const demoBtn = document.getElementById("loadDemoBtn");
+  demoBtn.addEventListener("click", () => {
+    const demoJWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    jwtInput.value = demoJWT;
+    jwtInput.dispatchEvent(new Event("input")); // trigger any parsing logic if needed
+  });
+</script>
+
+
 </body>
 </html>
